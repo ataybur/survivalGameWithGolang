@@ -32,20 +32,47 @@ func logErr(err error) {
 	}
 }
 
-type Character struct {
+type Character interface {
 	Occurrence
+	GetHP() int
+	GetAttackPoint() int
+	SetHp(hp int)
+	SetAttackPoint(attackPoint int)
+}
+
+type HeroInterface interface {
+	Character
+}
+
+type CharacterImpl struct {
 	hp          int
 	attackPoint int
 }
 
 type Hero struct {
-	Character
+	CharacterImpl
+}
+
+func (this CharacterImpl) GetHP() int {
+	return this.hp
+}
+
+func (this CharacterImpl) GetAttackPoint() int {
+	return this.attackPoint
+}
+
+func (this *CharacterImpl) SetHp(hp int) {
+	this.hp = hp
+}
+
+func (this *CharacterImpl) SetAttackPoint(attackPoint int) {
+	this.attackPoint = attackPoint
 }
 
 type reg_func_interface func([]string, string, *Context)
 
 type Enemy struct {
-	Character
+	CharacterImpl
 	species string
 }
 
@@ -65,7 +92,7 @@ type Field struct {
 	occurrence_map OccurrenceMap
 }
 
-type Occurrence struct {
+type Occurrence interface {
 }
 
 type Context struct {
@@ -180,24 +207,24 @@ func updateAttackPoint(character string, attackPointInt int, context *Context) {
 	updatePoint(character, attackPointInt, context, PutAttackPoint)
 }
 
-//func PutHP(m Character, hpInt int) {
+func PutHP(m CharacterImpl, hpInt int) {
+	m.SetHp(hpInt)
+}
+func PutAttackPoint(m Character, attackPointInt int) {
+	m.SetAttackPoint(attackPointInt)
+}
+
+//func (m *Character) PutHP(hpInt int) {
 //	m.hp = hpInt
 //}
-//func PutAttackPoint(m Character, attackPointInt int) {
+//func (m *Character) PutAttackPoint(attackPointInt int) {
 //	m.attackPoint = attackPointInt
 //}
 
-func (m *Character) PutHP(hpInt int) {
-	m.hp = hpInt
-}
-func (m *Character) PutAttackPoint(attackPointInt int) {
-	m.attackPoint = attackPointInt
-}
-
-func updatePoint(character string, newPointInt int, context *Context, putPoint func(int)) {
+func updatePoint(character string, newPointInt int, context *Context, putPoint func(Character, int)) {
 	if isCharacterHero(character) {
 		herotemp := context.hero
-		herotemp.putPoint(newPointInt)
+		putPoint(herotemp, newPointInt)
 		//herotemp.hp = hpInt
 		context.hero = herotemp
 	} else {
@@ -206,7 +233,7 @@ func updatePoint(character string, newPointInt int, context *Context, putPoint f
 			enemytemp = Enemy{}
 		}
 		enemytemp.species = character
-		enemytemp.putPoint(newPointInt)
+		putPoint(enemytemp, newPointInt)
 		//enemytemp.hp = hpInt
 		context.enemy_map[character] = enemytemp
 	}
