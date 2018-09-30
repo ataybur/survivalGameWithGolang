@@ -33,8 +33,7 @@ func logErr(err error) {
 }
 
 type Character interface {
-	Occurrence
-	GetHP() int
+	GetHp() int
 	GetAttackPoint() int
 	SetHp(hp int)
 	SetAttackPoint(attackPoint int)
@@ -44,37 +43,64 @@ type HeroInterface interface {
 	Character
 }
 
-type CharacterImpl struct {
-	hp          int
-	attackPoint int
+type EnemyInterface interface {
+	Character
+	GetSpecies() string
+	SetSpecies(species string)
 }
 
 type Hero struct {
-	CharacterImpl
+	Hp          int
+	AttackPoint int
 }
 
-func (this CharacterImpl) GetHP() int {
-	return this.hp
+func (this *Hero) GetHp() int {
+	return (*this).Hp
 }
 
-func (this CharacterImpl) GetAttackPoint() int {
-	return this.attackPoint
+func (this *Hero) GetAttackPoint() int {
+	return (*this).AttackPoint
 }
 
-func (this *CharacterImpl) SetHp(hp int) {
-	this.hp = hp
+func (this *Hero) SetHp(hp int) {
+	(*this).Hp = hp
 }
 
-func (this *CharacterImpl) SetAttackPoint(attackPoint int) {
-	this.attackPoint = attackPoint
+func (this *Hero) SetAttackPoint(attackPoint int) {
+	(*this).AttackPoint = attackPoint
+}
+
+type Enemy struct {
+	Hp          int
+	AttackPoint int
+	Species     string
+}
+
+func (this *Enemy) GetSpecies() string {
+	return (*this).Species
+}
+
+func (this *Enemy) SetSpecies(species string) {
+	(*this).Species = species
+}
+
+func (this *Enemy) GetHp() int {
+	return (*this).Hp
+}
+
+func (this *Enemy) GetAttackPoint() int {
+	return (*this).AttackPoint
+}
+
+func (this *Enemy) SetHp(hp int) {
+	(*this).Hp = hp
+}
+
+func (this *Enemy) SetAttackPoint(attackPoint int) {
+	(*this).AttackPoint = attackPoint
 }
 
 type reg_func_interface func([]string, string, *Context)
-
-type Enemy struct {
-	CharacterImpl
-	species string
-}
 
 type Weapon struct {
 	Occurrence
@@ -88,7 +114,7 @@ type Food struct {
 
 type Field struct {
 	range_m        int
-	enemy_map      map[int]Enemy
+	enemy_map      map[int]EnemyInterface
 	occurrence_map OccurrenceMap
 }
 
@@ -96,9 +122,9 @@ type Occurrence interface {
 }
 
 type Context struct {
-	hero      Hero
+	hero      HeroInterface
 	field     Field
-	enemy_map map[string]Enemy
+	enemy_map map[string]EnemyInterface
 }
 
 type OccurrenceMap struct {
@@ -145,23 +171,24 @@ func (occurrence_map OccurrenceMap) appendMap(i int, occurrence Occurrence) {
 }
 
 func initContext(context *Context) {
-	if len(context.enemy_map) == 0 {
-		context.enemy_map = make(map[string]Enemy)
-	}
-	if len(context.field.enemy_map) == 0 {
-		context.field.enemy_map = make(map[int]Enemy)
+	//	if len(context.enemy_map) == 0 {
+	//		context.enemy_map = make(map[string]Enemy)
+	//	}
+	if len((*context).field.enemy_map) == 0 {
+		(*context).field.enemy_map = make(map[int]EnemyInterface)
 	}
 }
-func saveEnemyToField(position int, enemy Enemy, context *Context) {
-	context.field.enemy_map[position] = enemy
+func saveEnemyToField(position int, enemy EnemyInterface, context *Context) {
+	(*context).field.enemy_map[position] = enemy
 }
 
-func getEnemyFromContext(enemyName string, context *Context) Enemy {
-	enemy, err2 := context.enemy_map[enemyName]
-	if err2 {
-		enemy = Enemy{}
+func getEnemyFromContext(enemyName string, context *Context) EnemyInterface {
+	enemy, ok := (*context).enemy_map[enemyName]
+	if !ok {
+		fmt.Printf("LAA %q \n", enemyName)
+		enemy = new(Enemy)
+		enemy.SetSpecies(enemyName)
 	}
-	enemy.species = enemyName
 	return enemy
 }
 
@@ -178,7 +205,6 @@ func reg1(info []string, regex string, context *Context) {
 	enemyName := info[1]
 	position := info[2]
 	positionInt := getInteger(position)
-	initContext(context)
 	enemytemp := getEnemyFromContext(enemyName, context)
 	saveEnemyToField(positionInt, enemytemp, context)
 	fmt.Printf("%q %q\n", enemyName, position)
@@ -207,10 +233,12 @@ func updateAttackPoint(character string, attackPointInt int, context *Context) {
 	updatePoint(character, attackPointInt, context, PutAttackPoint)
 }
 
-func PutHP(m CharacterImpl, hpInt int) {
+func PutHP(m Character, hpInt int) {
+	fmt.Printf("PutHP %q\n", hpInt)
 	m.SetHp(hpInt)
 }
 func PutAttackPoint(m Character, attackPointInt int) {
+	fmt.Printf("PutAttackPoint %q\n", attackPointInt)
 	m.SetAttackPoint(attackPointInt)
 }
 
@@ -230,12 +258,16 @@ func updatePoint(character string, newPointInt int, context *Context, putPoint f
 	} else {
 		enemytemp, ok := context.enemy_map[character]
 		if !ok {
-			enemytemp = Enemy{}
+			enemytemp = new(Enemy)
 		}
-		enemytemp.species = character
+		enemytemp.SetSpecies(character)
 		putPoint(enemytemp, newPointInt)
 		//enemytemp.hp = hpInt
-		context.enemy_map[character] = enemytemp
+		enemy := new(Enemy)
+		enemy.SetAttackPoint(enemytemp.GetAttackPoint())
+		enemy.SetHp(enemytemp.GetHp())
+		enemy.SetSpecies(enemytemp.GetSpecies())
+		context.enemy_map[character] = enemy
 	}
 }
 
@@ -278,14 +310,12 @@ func reg4(info []string, regex string, context *Context) {
 func reg5(info []string, regex string, context *Context) {
 	species := info[1]
 	fmt.Printf("%q\n", species)
-	if len(context.enemy_map) == 0 {
-		context.enemy_map = make(map[string]Enemy)
-	}
+
 	enemytemp, ok := context.enemy_map[species]
 	if !ok {
-		enemytemp = Enemy{}
+		enemytemp = new(Enemy)
 	}
-	enemytemp.species = species
+	enemytemp.SetSpecies(species)
 	context.enemy_map[species] = enemytemp
 }
 
@@ -304,12 +334,12 @@ func fillContext(info []string, regex string, context *Context) {
 	reg_funct(info, regex, context)
 }
 
-func fight(hero *Hero, enemy Enemy) bool {
+func fight(hero *HeroInterface, enemy EnemyInterface) bool {
 	result := false
-	heroAttackP := hero.attackPoint
-	enemyAttackP := enemy.attackPoint
-	enemyHP := enemy.hp
-	heroHP := hero.hp
+	heroAttackP := (*hero).GetAttackPoint()
+	enemyAttackP := enemy.GetAttackPoint()
+	enemyHP := enemy.GetHp()
+	heroHP := (*hero).GetHp()
 	remains := enemyHP % heroAttackP
 	if remains != 0 {
 		remains -= heroAttackP
@@ -317,10 +347,10 @@ func fight(hero *Hero, enemy Enemy) bool {
 	newEnemyHP := enemyHP + remains
 	multiplier := newEnemyHP / heroAttackP
 	multipliedEnemyAP := multiplier * enemyAttackP
-	enemyName := enemy.species
+	enemyName := enemy.GetSpecies()
 	if heroHP > multipliedEnemyAP {
 		heroHP -= multipliedEnemyAP
-		hero.hp = heroHP
+		(*hero).SetHp(heroHP)
 		fmt.Printf(CONST_2, enemyName, heroHP)
 		result = true
 	} else {
@@ -335,8 +365,8 @@ func fight(hero *Hero, enemy Enemy) bool {
 	}
 	return result
 }
-func heroFighter(hero *Hero) func(enemy Enemy) bool {
-	return func(enemy Enemy) bool {
+func heroFighter(hero *HeroInterface) func(enemy EnemyInterface) bool {
+	return func(enemy EnemyInterface) bool {
 		return fight(hero, enemy)
 	}
 }
@@ -345,16 +375,19 @@ func main() {
 	file, err := os.Open("lines")
 	logErr(err)
 	defer file.Close()
-	var context = new(Context)
+	var context = Context{}
+	context.enemy_map = make(map[string]EnemyInterface)
+	initContext(&context)
+	context.hero = new(Hero)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
 		regex, info := whichRegexIsAppropiate(line)
-		fillContext(info, regex, context)
+		fillContext(info, regex, &context)
 	}
 	field := context.field
 	isHeroAlive := true
-	fmt.Printf(CONST_1, context.hero.hp)
+	fmt.Printf(CONST_1, context.hero.GetHp())
 	fmt.Printf("Range is %d"+END_LINE, field.range_m)
 	var lastIndex int
 	fighter := heroFighter(&context.hero)
@@ -362,7 +395,8 @@ func main() {
 	for i := 1; i <= field.range_m; i++ {
 		enemy, ok := field.enemy_map[i]
 		if ok {
-			enemy2, ok2 := context.enemy_map[enemy.species]
+			fmt.Printf("Enemy is %q"+END_LINE, enemy.GetSpecies())
+			enemy2, ok2 := context.enemy_map[enemy.GetSpecies()]
 			if ok2 {
 				isHeroAlive = fighter(enemy2)
 				if !isHeroAlive {
