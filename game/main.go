@@ -67,7 +67,7 @@ func initContext(context *structs.Context) {
 }
 
 func main() {
-	file, err := os.Open("lines")
+	file, err := os.Open("resources/lines")
 	funcs.LogErr(err)
 	defer file.Close()
 	var context = structs.Context{}
