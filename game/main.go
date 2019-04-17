@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"funcs"
+	"game/funcs"
+	"game/structs"
 	"log"
 	"os"
-	"structs"
 )
 
 const (

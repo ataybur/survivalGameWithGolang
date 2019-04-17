@@ -3,11 +3,11 @@ package funcs
 
 import (
 	"fmt"
+	"game/structs"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
-	"structs"
 )
 
 const (
