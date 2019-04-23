@@ -2,28 +2,11 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"game/funcs"
 	"game/structs"
 	"log"
 	"os"
 )
-
-const (
-	REGEX_1  = "There is a ([a-zA-Z ]+) at position ([0-9]+)"
-	REGEX_2  = "([a-zA-Z ]+) attack is ([0-9]+)"
-	REGEX_3  = "Resources are ([0-9]+) meters away"
-	REGEX_4  = "([a-zA-Z ]+) has ([0-9]+) hp"
-	REGEX_5  = "([a-zA-Z ]+) is Enemy"
-	END_LINE = "\n"
-	CONST_1  = "Hero started journey with %d HP!" + END_LINE
-	CONST_2  = "Hero defeated %s with %d HP remaining" + END_LINE
-	CONST_3  = "Survived" + END_LINE
-	CONST_4  = "%s defeated Hero with %d HP remaining" + END_LINE
-	CONST_5  = "Hero is Dead!! Last seen at position %d!!" + END_LINE
-)
-
-var REGEX_ARR = [5]string{REGEX_1, REGEX_2, REGEX_3, REGEX_4, REGEX_5}
 
 type reg_func_interface func([]string, string, *structs.Context)
 
@@ -57,9 +40,6 @@ func (occurrence_map OccurrenceMap) appendMap(i int, occurrence Occurrence) {
 }
 
 func initContext(context *structs.Context) {
-	//	if len(context.enemy_map) == 0 {
-	//		context.enemy_map = make(map[string]Enemy)
-	//	}
 	field := context.Field
 	if len(field.Enemy_map) == 0 {
 		field.InitEnemyMap()
@@ -82,15 +62,15 @@ func main() {
 	}
 	field := context.Field
 	isHeroAlive := true
-	fmt.Printf(CONST_1, context.Hero.Hp)
-	fmt.Printf("Range is %d"+END_LINE, field.Range_m)
+	funcs.LogHeroStartsJourney(context)
+	funcs.LogRangeIs(field)
 	var lastIndex int
 	fighter := funcs.HeroFighter(&context.Hero)
 
 	for i := 1; i <= field.Range_m; i++ {
 		enemy, ok := field.Enemy_map[i]
 		if ok {
-			fmt.Printf("Enemy is %q"+END_LINE, enemy.Species)
+			funcs.LogEnemyIs(enemy)
 			enemy2, ok2 := context.Enemy_map[enemy.Species]
 			if ok2 {
 				isHeroAlive = fighter(enemy2)
@@ -102,9 +82,9 @@ func main() {
 		}
 	}
 	if isHeroAlive {
-		fmt.Println(CONST_3)
+		funcs.LogSurvived()
 	} else {
-		fmt.Printf(CONST_5, lastIndex)
+		funcs.LogDead(lastIndex)
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)

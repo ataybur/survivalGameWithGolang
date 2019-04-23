@@ -68,10 +68,10 @@ func FillContext(info []string, regex string, context *structs.Context) {
 
 func fight(hero *structs.Hero, enemy structs.Enemy) bool {
 	result := false
-	heroAttackP := hero.AttackPoint
-	enemyAttackP := enemy.AttackPoint
-	enemyHP := enemy.Hp
-	heroHP := hero.Hp
+	heroAttackP := hero.GetAttackPoint()
+	enemyAttackP := enemy.GetAttackPoint()
+	enemyHP := enemy.GetHp()
+	heroHP := hero.GetHp()
 	remains := enemyHP % heroAttackP
 	if remains != 0 {
 		remains -= heroAttackP
@@ -97,6 +97,27 @@ func fight(hero *structs.Hero, enemy structs.Enemy) bool {
 	}
 	return result
 }
+
+func LogHeroStartsJourney(c structs.Context) {
+	fmt.Printf(CONST_1, c.Hero.GetHp())
+}
+
+func LogRangeIs(f structs.Field) {
+	fmt.Printf("Range is %d"+END_LINE, f.Range_m)
+}
+
+func LogEnemyIs(e structs.Enemy) {
+	fmt.Printf("Enemy is %q"+END_LINE, e.Species)
+}
+
+func LogSurvived() {
+	fmt.Println(CONST_3)
+}
+
+func LogDead(lastIndex int) {
+	fmt.Printf(CONST_5, lastIndex)
+}
+
 func HeroFighter(hero *structs.Hero) func(enemy structs.Enemy) bool {
 	return func(enemy structs.Enemy) bool {
 		return fight(hero, enemy)
@@ -159,13 +180,13 @@ func isCharacterHero(characterName string) bool {
 	return characterName == "Hero"
 }
 
-func updateHeroPoint(character string, newPointInt int, context *structs.Context, putPoint func(*structs.Hero, int)) {
+func updateHeroPoint(character string, newPointInt int, context *structs.Context, putPoint func(structs.CharacterI, int)) {
 	herotemp := &context.Hero
 	putPoint(herotemp, newPointInt)
 	context.SetHero(*herotemp)
 }
 
-func updateEnemyPoint(character string, newPointInt int, context *structs.Context, putPoint func(*structs.Enemy, int)) {
+func updateEnemyPoint(character string, newPointInt int, context *structs.Context, putPoint func(structs.CharacterI, int)) {
 	enemymap := &context.Enemy_map
 	enemytemp, ok := (*enemymap)[character]
 	if !ok {
@@ -176,8 +197,8 @@ func updateEnemyPoint(character string, newPointInt int, context *structs.Contex
 	putPoint(enemytempP, newPointInt)
 	//enemytemp.hp = hpInt
 	enemy := structs.Enemy{}
-	enemy.SetAttackPoint(enemytemp.AttackPoint)
-	enemy.SetHp(enemytemp.Hp)
+	enemy.SetAttackPoint(enemytemp.GetAttackPoint())
+	enemy.SetHp(enemytemp.GetHp())
 	enemy.SetSpecies(enemytemp.Species)
 	context.Enemy_map[character] = enemy
 
@@ -185,35 +206,25 @@ func updateEnemyPoint(character string, newPointInt int, context *structs.Contex
 
 func updateAttackPoint(character string, attackPointInt int, context *structs.Context) {
 	if isCharacterHero(character) {
-		updateHeroPoint(character, attackPointInt, context, PutHeroAttackPoint)
+		updateHeroPoint(character, attackPointInt, context, PutAttackPoint)
 	} else {
-		updateEnemyPoint(character, attackPointInt, context, PutEnemyAttackPoint)
+		updateEnemyPoint(character, attackPointInt, context, PutAttackPoint)
 	}
 }
 
 func updateHealthPoint(character string, hpInt int, context *structs.Context) {
 	if isCharacterHero(character) {
-		updateHeroPoint(character, hpInt, context, PutHeroHP)
+		updateHeroPoint(character, hpInt, context, PutHP)
 	} else {
-		updateEnemyPoint(character, hpInt, context, PutEnemyHP)
+		updateEnemyPoint(character, hpInt, context, PutHP)
 	}
 }
 
-func PutHeroHP(m *structs.Hero, hpInt int) {
+func PutHP(m structs.CharacterI, hpInt int) {
 	fmt.Printf("PutHP %q\n", hpInt)
 	m.SetHp(hpInt)
 }
-func PutHeroAttackPoint(m *structs.Hero, attackPointInt int) {
-	fmt.Printf("PutAttackPoint %q\n", attackPointInt)
-	m.SetAttackPoint(attackPointInt)
-}
-
-func PutEnemyHP(m *structs.Enemy, hpInt int) {
-	fmt.Printf("PutHP %q\n", hpInt)
-	m.SetHp(hpInt)
-}
-
-func PutEnemyAttackPoint(m *structs.Enemy, attackPointInt int) {
+func PutAttackPoint(m structs.CharacterI, attackPointInt int) {
 	fmt.Printf("PutAttackPoint %q\n", attackPointInt)
 	m.SetAttackPoint(attackPointInt)
 }
