@@ -39,26 +39,26 @@ func (occurrence_map OccurrenceMap) appendMap(i int, occurrence Occurrence) {
 	occurrence_map.occurrence_map[i] = occurrence
 }
 
-func initContext(context *structs.Context) {
+func initContext() structs.Context {
+	context := structs.Context{}
+	context.InitEnemyMap()
 	field := context.Field
 	if len(field.Enemy_map) == 0 {
 		field.InitEnemyMap()
 	}
+	context.InitHero()
+	return context
 }
 
 func main() {
 	file, err := os.Open("resources/lines")
 	funcs.LogErr(err)
 	defer file.Close()
-	var context = structs.Context{}
-	context.InitEnemyMap()
-	initContext(&context)
-	context.InitHero()
+	context := initContext()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		regex, info := funcs.WhichRegexIsAppropiate(line)
-		funcs.FillContext(info, regex, &context)
+		funcs.FillContext(line, &context)
 	}
 	field := context.Field
 	isHeroAlive := true

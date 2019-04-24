@@ -43,7 +43,7 @@ func isStringMatches(line, regex string) []string {
 	return result
 }
 
-func WhichRegexIsAppropiate(line string) (string, []string) {
+func whichRegexIsAppropiate(line string) (string, []string) {
 	result := ""
 	var line_result []string
 	for _, REGEX := range REGEX_ARR {
@@ -53,15 +53,14 @@ func WhichRegexIsAppropiate(line string) (string, []string) {
 			break
 		}
 	}
-	fmt.Println("1: " + result)
 	line_result_log := strings.Join(line_result, "")
-	fmt.Println("2: " + line_result_log)
+	fmt.Println(line_result_log)
 	return result, line_result
 }
 
-func FillContext(info []string, regex string, context *structs.Context) {
+func FillContext(line string, context *structs.Context) {
+	regex, info := whichRegexIsAppropiate(line)
 	fmt.Println()
-	fmt.Println(regex)
 	reg_funct := func_map[regex]
 	reg_funct(info, regex, context)
 }
@@ -135,17 +134,20 @@ func reg1(info []string, regex string, context *structs.Context) {
 	positionInt := getInteger(position)
 	enemytemp := getEnemyFromContext(enemyName, context)
 	saveEnemyToField(positionInt, enemytemp, context)
+	fmt.Println()
 	fmt.Printf("%q %q\n", enemyName, position)
 }
 
 func reg2(info []string, regex string, context *structs.Context) {
 	character := info[1]
 	attackPoint := info[2]
+	fmt.Println()
 	fmt.Printf("%q %q\n", character, attackPoint)
 	attackPointInt := getInteger(info[2])
 	updateAttackPoint(character, attackPointInt, context)
 }
 func reg3(info []string, regex string, context *structs.Context) {
+	fmt.Println()
 	fmt.Printf("%q\n", info[1])
 	rangeInt := getInteger(info[1])
 	field := &context.Field
@@ -155,11 +157,13 @@ func reg4(info []string, regex string, context *structs.Context) {
 	character := info[1]
 	hp := info[2]
 	hpInt := getInteger(hp)
+	fmt.Println()
 	fmt.Printf("%q %q\n", character, hp)
 	updateHealthPoint(character, hpInt, context)
 }
 func reg5(info []string, regex string, context *structs.Context) {
 	species := info[1]
+	fmt.Println()
 	fmt.Printf("%q\n", species)
 	enemymap := context.Enemy_map
 	enemytemp, _ := enemymap[species]
