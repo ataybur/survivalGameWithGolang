@@ -2,9 +2,11 @@
 package funcs
 
 import (
+	"bufio"
 	"fmt"
 	"game/structs"
 	"log"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -58,11 +60,68 @@ func whichRegexIsAppropiate(line string) (string, []string) {
 	return result, line_result
 }
 
-func FillContext(line string, context *structs.Context) {
-	regex, info := whichRegexIsAppropiate(line)
-	fmt.Println()
-	reg_funct := func_map[regex]
-	reg_funct(info, regex, context)
+func Play(context *structs.Context) {
+	field := context.Field
+	isHeroAlive := true
+	LogHeroStartsJourney(context)
+	LogRangeIs(field)
+	var lastIndex int
+	fighter := HeroFighter(&context.Hero)
+	for i := 1; i <= field.Range_m; i++ {
+		enemy, ok := field.Enemy_map[i]
+		if ok {
+			LogEnemyIs(enemy)
+			enemy2, ok2 := context.Enemy_map[enemy.Species]
+			if ok2 {
+				isHeroAlive = fighter(enemy2)
+				if !isHeroAlive {
+					lastIndex = i
+					break
+				}
+			}
+		}
+	}
+	if isHeroAlive {
+		LogSurvived()
+	} else {
+		LogDead(lastIndex)
+	}
+}
+
+func InitContext() *structs.Context {
+	context := structs.Context{}
+	context.InitEnemyMap()
+	field := context.Field
+	if len(field.Enemy_map) == 0 {
+		field.InitEnemyMap()
+	}
+	context.InitHero()
+	return &context
+}
+
+func ReadFileIntoLines(fileName string) []string {
+	var lines []string
+	file, err := os.Open(fileName)
+	LogErr(err)
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		lines = append(lines, line)
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return lines
+}
+
+func FillContext(lines []string, context *structs.Context) {
+	for i := range lines {
+		regex, info := whichRegexIsAppropiate(lines[i])
+		fmt.Println()
+		reg_funct := func_map[regex]
+		reg_funct(info, regex, context)
+	}
 }
 
 func fight(hero *structs.Hero, enemy structs.Enemy) bool {
@@ -97,7 +156,7 @@ func fight(hero *structs.Hero, enemy structs.Enemy) bool {
 	return result
 }
 
-func LogHeroStartsJourney(c structs.Context) {
+func LogHeroStartsJourney(c *structs.Context) {
 	fmt.Printf(CONST_1, c.Hero.GetHp())
 }
 
