@@ -60,17 +60,6 @@ func Play(context *structs.Context) {
 	}
 }
 
-func InitContext() *structs.Context {
-	context := structs.Context{}
-	context.InitEnemyMap()
-	field := context.Field
-	if len(field.Enemy_map) == 0 {
-		field.InitEnemyMap()
-	}
-	context.InitHero()
-	return &context
-}
-
 func ReadFileIntoLines(fileName string) []string {
 	var lines []string
 	file, err := os.Open(fileName)

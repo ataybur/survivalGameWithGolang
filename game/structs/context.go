@@ -18,3 +18,12 @@ func (this *Context) InitEnemyMap() {
 func (this *Context) InitHero() {
 	this.Hero = Hero{}
 }
+
+func (this *Context) Init() {
+	this.InitEnemyMap()
+	field := this.Field
+	if len(field.Enemy_map) == 0 {
+		field.InitEnemyMap()
+	}
+	this.InitHero()
+}
