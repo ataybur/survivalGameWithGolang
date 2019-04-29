@@ -1,9 +1,5 @@
 // consts.go
-package funcs
-
-import (
-	"game/structs"
-)
+package structs
 
 const (
 	REGEX_1  = "There is a ([a-zA-Z ]+) at position ([0-9]+)"
@@ -29,4 +25,4 @@ var func_map = map[string]reg_func_interface{
 	REGEX_5: reg5,
 }
 
-type reg_func_interface func([]string, string, *structs.Context)
+type reg_func_interface func([]string, string, *Context)
