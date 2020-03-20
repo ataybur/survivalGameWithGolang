@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"game/structs"
+	"game/utils"
 	"log"
 	"os"
 )
@@ -22,11 +23,11 @@ func Play(context *structs.Context) {
 	field := context.Field
 	isHeroAlive := true
 	LogHeroStartsJourney(context)
-	LogRangeIs(field)
+	LogRangeIs(context, field)
 	var lastIndex int
-	fighter := HeroFighter(&context.Hero)
+	fighter := HeroFighter(&context.Hero, context)
 	for i, enemy := range field.Enemy_map {
-		LogEnemyIs(enemy)
+		LogEnemyIs(context, enemy)
 		enemy2, ok2 := context.Enemy_map[enemy.Species]
 		if ok2 {
 			isHeroAlive = fighter(enemy2)
@@ -38,16 +39,16 @@ func Play(context *structs.Context) {
 
 	}
 	if isHeroAlive {
-		LogSurvived()
+		LogSurvived(context)
 	} else {
-		LogDead(lastIndex)
+		LogDead(context, lastIndex)
 	}
 }
 
 func ReadFileIntoLines(fileName string) []string {
 	var lines []string
 	file, err := os.Open(fileName)
-	LogErr(err)
+	utils.LogErr(err)
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -60,7 +61,21 @@ func ReadFileIntoLines(fileName string) []string {
 	return lines
 }
 
-func fight(hero *structs.Hero, enemy structs.Enemy) bool {
+func ReadFileIntoLines2(file *os.File) []string {
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		lines = append(lines, line)
+		fmt.Println(line)
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return lines
+}
+
+func fight(context *structs.Context, hero *structs.Hero, enemy structs.Enemy) bool {
 	result := false
 	heroAttackP := hero.GetAttackPoint()
 	enemyAttackP := enemy.GetAttackPoint()
@@ -77,7 +92,7 @@ func fight(hero *structs.Hero, enemy structs.Enemy) bool {
 	if heroHP > multipliedEnemyAP {
 		heroHP -= multipliedEnemyAP
 		hero.SetHp(heroHP)
-		fmt.Printf(CONST_2, enemyName, heroHP)
+		LogHeroDefeated(context, enemyName, heroHP)
 		result = true
 	} else {
 		remains := heroHP % enemyAttackP
@@ -87,39 +102,41 @@ func fight(hero *structs.Hero, enemy structs.Enemy) bool {
 		newHeroHP := heroHP + remains
 		multiplier := newHeroHP / enemyAttackP
 		multipliedHeroAP := multiplier * heroAttackP
-		fmt.Printf(CONST_4, enemyName, enemyHP-multipliedHeroAP)
+		LogEnemyDefeated(context, enemyName, enemyHP-multipliedHeroAP)
 	}
 	return result
 }
 
+func LogEnemyDefeated(c *structs.Context, enemyName string, enemyHP int) {
+	c.Logger.Log(CONST_4, enemyName, enemyHP)
+}
+
+func LogHeroDefeated(c *structs.Context, enemyName string, heroHP int) {
+	c.Logger.Log(CONST_2, enemyName, heroHP)
+}
+
 func LogHeroStartsJourney(c *structs.Context) {
-	fmt.Printf(CONST_1, c.Hero.GetHp())
+	c.Logger.Log(CONST_1, c.Hero.GetHp())
 }
 
-func LogRangeIs(f structs.Field) {
-	fmt.Printf("Range is %d"+END_LINE, f.Range_m)
+func LogRangeIs(c *structs.Context, f structs.Field) {
+	c.Logger.Log("Range is %d"+END_LINE, f.Range_m)
 }
 
-func LogEnemyIs(e structs.Enemy) {
-	fmt.Printf("Enemy is %q"+END_LINE, e.Species)
+func LogEnemyIs(c *structs.Context, e structs.Enemy) {
+	c.Logger.Log("Enemy is %q"+END_LINE, e.Species)
 }
 
-func LogSurvived() {
-	fmt.Println(CONST_3)
+func LogSurvived(c *structs.Context) {
+	c.Logger.Log(CONST_3)
 }
 
-func LogDead(lastIndex int) {
-	fmt.Printf(CONST_5, lastIndex)
+func LogDead(c *structs.Context, lastIndex int) {
+	c.Logger.Log(CONST_5, lastIndex)
 }
 
-func HeroFighter(hero *structs.Hero) func(enemy structs.Enemy) bool {
+func HeroFighter(hero *structs.Hero, c *structs.Context) func(enemy structs.Enemy) bool {
 	return func(enemy structs.Enemy) bool {
-		return fight(hero, enemy)
-	}
-}
-
-func LogErr(err error) {
-	if err != nil {
-		log.Fatal(err)
+		return fight(c, hero, enemy)
 	}
 }

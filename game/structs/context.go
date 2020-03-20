@@ -3,16 +3,27 @@ package structs
 
 import (
 	"fmt"
-	"log"
-	"regexp"
-	"strconv"
+	"game/utils"
 	"strings"
 )
+
+type Logger struct {
+	log string
+}
+
+func (l *Logger) Log(_const string, args ...interface{}) {
+	l.log += fmt.Sprintf(_const, args...)
+}
 
 type Context struct {
 	Hero      Hero
 	Field     Field
 	Enemy_map map[string]Enemy
+	Logger    *Logger
+}
+
+func (this Context) GetLog() string {
+	return this.Logger.log
 }
 
 func (this *Context) SetHero(i Hero) {
@@ -34,14 +45,17 @@ func (this *Context) Init() {
 		field.InitEnemyMap()
 	}
 	this.InitHero()
+	this.Logger = new(Logger)
 }
 
 func (this *Context) Fill(lines []string) {
 	for _, line := range lines {
-		regex, info := whichRegexIsAppropiate(line)
-		fmt.Println()
-		reg_funct := func_map[regex]
-		reg_funct(info, regex, this)
+		if line != "" {
+			regex, info := whichRegexIsAppropiate(line)
+			fmt.Printf("Line:%s, Regex: %s, Info: %v \n", line, regex, info)
+			reg_funct := func_map[regex]
+			reg_funct(info, regex, this)
+		}
 	}
 }
 
@@ -60,17 +74,10 @@ func whichRegexIsAppropiate(line string) (string, []string) {
 	return result, line_result
 }
 
-func isStringMatches(line, regex string) []string {
-	r, err := regexp.Compile(regex)
-	LogErr(err)
-	result := r.FindStringSubmatch(line)
-	return result
-}
-
 func reg1(info []string, regex string, context *Context) {
 	enemyName := info[1]
 	position := info[2]
-	positionInt := getInteger(position)
+	positionInt := utils.GetInteger(position)
 	enemytemp := getEnemyFromContext(enemyName, context)
 	saveEnemyToField(positionInt, enemytemp, context)
 	fmt.Println()
@@ -82,20 +89,20 @@ func reg2(info []string, regex string, context *Context) {
 	attackPoint := info[2]
 	fmt.Println()
 	fmt.Printf("%q %q\n", character, attackPoint)
-	attackPointInt := getInteger(info[2])
+	attackPointInt := utils.GetInteger(info[2])
 	updateAttackPoint(character, attackPointInt, context)
 }
 func reg3(info []string, regex string, context *Context) {
 	fmt.Println()
 	fmt.Printf("%q\n", info[1])
-	rangeInt := getInteger(info[1])
+	rangeInt := utils.GetInteger(info[1])
 	field := &context.Field
 	field.SetRangeM(rangeInt)
 }
 func reg4(info []string, regex string, context *Context) {
 	character := info[1]
 	hp := info[2]
-	hpInt := getInteger(hp)
+	hpInt := utils.GetInteger(hp)
 	fmt.Println()
 	fmt.Printf("%q %q\n", character, hp)
 	updateHealthPoint(character, hpInt, context)
@@ -108,21 +115,6 @@ func reg5(info []string, regex string, context *Context) {
 	enemytemp, _ := enemymap[species]
 	enemytemp.SetSpecies(species)
 	context.Enemy_map[species] = enemytemp
-}
-
-func getInteger(str string) int {
-	result, err := strconv.Atoi(str)
-	if err != nil {
-		result = 0
-		LogErr(err)
-	}
-	return result
-}
-
-func LogErr(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func getEnemyFromContext(enemyName string, context *Context) Enemy {
